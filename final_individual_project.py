@@ -1,73 +1,107 @@
 #!/usr/bin/env python
 # coding: utf-8
-import streamlit as st
 import pandas as pd
 import numpy as np
+import joblib
+import streamlit as st
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, confusion_matrix
 
-# Load model and dataset
-# Replace with your actual trained logistic regression model
-model = LogisticRegression()  # Placeholder, replace with your model loading code
-
-# Income labels
-income_labels = {
-    1: "Less than $10k",
-    2: "$10k - $20k",
-    3: "$20k - $30k",
-    4: "$30k - $40k",
-    5: "$40k - $50k",
-    6: "$50k - $75k",
-    7: "$75k - $100k",
-    8: "$100k - $150k",
-    9: "$150k or more"
-}
-
-# Education levels
-education_labels = {
-    1: "Less than high school",
-    2: "High school incomplete",
-    3: "High school graduate",
-    4: "Some college, no degree",
-    5: "Two-year associate degree",
-    6: "Four-year college/university degree",
-    7: "Some postgraduate education",
-    8: "Postgraduate or professional degree"
-}
-
-# App Title and Description
+# Title of the app
 st.title("LinkedIn Usage Predictor")
 st.markdown("This app predicts whether a person is likely to use LinkedIn based on their demographics and attributes.")
 
-# User Inputs
-income = st.selectbox("Income Level", options=list(income_labels.keys()), format_func=lambda x: income_labels[x])
-education = st.selectbox("Education Level", options=list(education_labels.keys()), format_func=lambda x: education_labels[x])
+# Load data
+@st.cache
+def load_data():
+    s = pd.read_csv("social_media_usage.csv")
+
+    # Cleaning and feature engineering
+    def clean_sm(x):
+        return np.where(x == 1, 1, 0)
+
+    s['sm_li'] = clean_sm(s['web1h'])
+    features = ['income', 'educ2', 'par', 'marital', 'gender', 'age']
+    ss = s[features + ['sm_li']].copy()
+
+    # Rename columns
+    ss.rename(columns={
+        'income': 'income',
+        'educ2': 'education',
+        'par': 'parent',
+        'marital': 'married',
+        'gender': 'gender',
+        'age': 'age'
+    }, inplace=True)
+
+    # Remove outliers and missing values
+    ss = ss[(ss['income'] <= 9) & (ss['education'] <= 8) & (ss['age'] <= 98)]
+    ss = ss.dropna()
+
+    # Transform binary columns
+    ss['female'] = np.where(ss['gender'] == 2, 1, 0)  # Female = 1, Male = 0
+    ss['married'] = np.where(ss['married'] == 1, 1, 0)  # Married = 1, Otherwise = 0
+    ss.drop(columns=['gender'], inplace=True)
+
+    return ss
+
+# Load and prepare data
+data = load_data()
+features = ['income', 'education', 'parent', 'married', 'female', 'age']
+X = data[features]
+y = data['sm_li']
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+# Train and save the model if not already saved
+@st.cache(allow_output_mutation=True)
+def train_and_save_model():
+    model = LogisticRegression(class_weight='balanced', max_iter=3000, random_state=42)
+    model.fit(X_train, y_train)
+    return model
+
+model = train_and_save_model()
+
+# User input fields
+st.header("Enter Details to Predict LinkedIn Usage")
+
+income = st.number_input("Income (1-9)", min_value=1, max_value=9, value=5)
+education = st.number_input("Education Level (1-8)", min_value=1, max_value=8, value=4)
 parent = st.radio("Are you a parent?", ["No", "Yes"])
 married = st.radio("Are you married?", ["No", "Yes"])
 gender = st.radio("Gender", ["Male", "Female"])
-age = st.slider("Age (18-98)", min_value=18, max_value=98, value=25)
+age = st.slider("Age (1-98)", min_value=1, max_value=98, value=25)
 
-# Convert inputs to binary or numerical format for model
-parent_binary = 1 if parent == "Yes" else 0
-married_binary = 1 if married == "Yes" else 0
-gender_binary = 1 if gender == "Female" else 0
+# Convert user inputs into a dataframe
+parent_val = 1 if parent == "Yes" else 0
+married_val = 1 if married == "Yes" else 0
+female_val = 1 if gender == "Female" else 0
 
-# Feature vector for prediction
-user_data = [[income, education, parent_binary, married_binary, gender_binary, age]]
+user_data = pd.DataFrame({
+    'income': [income],
+    'education': [education],
+    'parent': [parent_val],
+    'married': [married_val],
+    'female': [female_val],
+    'age': [age]
+})
 
-# Add a Predict Button
+# Prediction button
 if st.button("Predict LinkedIn Usage"):
-    # Predict using the model (replace this with your model's predict_proba function)
-    # Placeholder prediction
-    pred_prob = model.predict_proba(user_data)[0] if hasattr(model, "predict_proba") else [0.2, 0.8]
+    try:
+        pred_prob = model.predict_proba(user_data)[0]
+        predicted_class = "LinkedIn User" if pred_prob[1] > 0.5 else "Not a LinkedIn User"
+        probability = pred_prob[1] * 100
 
-    # Prediction results
-    predicted_class = "LinkedIn User" if pred_prob[1] > 0.5 else "Not a LinkedIn User"
-    probability = pred_prob[1] * 100
-
-    # Display results
-    st.subheader("Prediction Results")
-    st.markdown(f"**Predicted Category:** {predicted_class}")
-    st.markdown(f"**Probability of being a LinkedIn User:** {probability:.1f}%")
-
-    # Display probability chart
-    st.bar_chart({"Outcome": ["LinkedIn User", "Not LinkedIn User"], "Probability": pred_prob})
+        # Display results
+        st.subheader("Prediction Results")
+        st.markdown(f"**Predicted Category:** {predicted_class}")
+        st.markdown(f"**Probability of being a LinkedIn User:** {probability:.2f}%")
+        st.bar_chart(pd.DataFrame({'Outcome': ['LinkedIn User', 'Not LinkedIn User'], 
+                                   'Probability': pred_prob}).set_index('Outcome'))
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
