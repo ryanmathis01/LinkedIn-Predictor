@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 # coding: utf-8
-#!/usr/bin/env python
-# coding: utf-8
 
 # Import libraries
 import pandas as pd
@@ -78,7 +76,8 @@ education_level = st.selectbox(
         (5, "Two-year associate degree"),
         (6, "Four-year college/university degree"),
         (7, "Some postgraduate or professional schooling"),
-        (8, "Postgraduate or professional degree"]
+        (8, "Postgraduate or professional degree")
+    ]
 )
 education = education_level[0]  # Extract numeric value
 parent = st.radio("Are you a parent?", ("No", "Yes"))
