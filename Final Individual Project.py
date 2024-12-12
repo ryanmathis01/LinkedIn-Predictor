@@ -16,7 +16,7 @@ from sklearn.metrics import confusion_matrix, classification_report
 
 
 # Load data
-s = pd.read_csv("/Users/ryanmathis/Downloads/social_media_usage.csv")
+s = pd.read_csv("social_media_usage.csv")
 s.shape
 
 
