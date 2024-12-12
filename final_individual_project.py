@@ -127,5 +127,9 @@ if st.button("Predict LinkedIn Usage"):
     st.subheader("Prediction Results")
     st.markdown(f"**Predicted Category:** {predicted_class}")
     st.markdown(f"**Probability of being a LinkedIn User:** {probability:.2f}%")
-    st.bar_chart(pd.DataFrame({'Outcome': ['LinkedIn User', 'Not LinkedIn User'], 
-                               'Probability': pred_prob}).set_index('Outcome'))
+
+    # Bar chart with custom colors
+    st.bar_chart(pd.DataFrame({
+        'Outcome': ['LinkedIn User', 'Not LinkedIn User'],
+        'Probability': pred_prob
+    }).set_index('Outcome'))
