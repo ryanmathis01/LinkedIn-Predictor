@@ -7,7 +7,6 @@ import numpy as np
 import streamlit as st
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import confusion_matrix, classification_report
 import altair as alt
 
 # Load data
@@ -65,7 +64,22 @@ st.title("LinkedIn Usage Predictor")
 st.write("This app predicts whether a person is likely to use LinkedIn based on their demographics and attributes.")
 
 # Input fields
-income = st.slider("Income (1-9)", min_value=1, max_value=9, value=5)
+income_level = st.selectbox(
+    "Income Level (1-9)", 
+    options=[
+        (1, "Less than $10,000"),
+        (2, "$10,000 to $20,000"),
+        (3, "$20,000 to $30,000"),
+        (4, "$30,000 to $40,000"),
+        (5, "$40,000 to $50,000"),
+        (6, "$50,000 to $75,000"),
+        (7, "$75,000 to $100,000"),
+        (8, "$100,000 to $150,000"),
+        (9, "$150,000 or more")
+    ]
+)
+income = income_level[0]  # Extract numeric value
+
 education_level = st.selectbox(
     "Education Level (1-8)", 
     options=[
@@ -80,6 +94,7 @@ education_level = st.selectbox(
     ]
 )
 education = education_level[0]  # Extract numeric value
+
 parent = st.radio("Are you a parent?", ("No", "Yes"))
 parent = 1 if parent == "Yes" else 0
 married = st.radio("Are you married?", ("No", "Yes"))
