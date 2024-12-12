@@ -6,7 +6,8 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 
 # Load model and dataset
-# Assuming you already trained your logistic regression model and saved it
+# Replace with your actual trained logistic regression model
+model = LogisticRegression()  # Placeholder, replace with your model loading code
 
 # Income labels
 income_labels = {
@@ -33,10 +34,11 @@ education_labels = {
     8: "Postgraduate or professional degree"
 }
 
+# App Title and Description
 st.title("LinkedIn Usage Predictor")
 st.markdown("This app predicts whether a person is likely to use LinkedIn based on their demographics and attributes.")
 
-# Inputs
+# User Inputs
 income = st.selectbox("Income Level", options=list(income_labels.keys()), format_func=lambda x: income_labels[x])
 education = st.selectbox("Education Level", options=list(education_labels.keys()), format_func=lambda x: education_labels[x])
 parent = st.radio("Are you a parent?", ["No", "Yes"])
@@ -52,20 +54,20 @@ gender_binary = 1 if gender == "Female" else 0
 # Feature vector for prediction
 user_data = [[income, education, parent_binary, married_binary, gender_binary, age]]
 
-# Placeholder for model prediction
-# Replace `model` with your actual trained model instance
-model = LogisticRegression()
-# Placeholder for prediction probabilities
-pred_prob = [0.5, 0.5]  # Replace with actual `model.predict_proba(user_data)`
+# Add a Predict Button
+if st.button("Predict LinkedIn Usage"):
+    # Predict using the model (replace this with your model's predict_proba function)
+    # Placeholder prediction
+    pred_prob = model.predict_proba(user_data)[0] if hasattr(model, "predict_proba") else [0.2, 0.8]
 
-# Prediction
-predicted_class = "LinkedIn User" if pred_prob[1] > 0.5 else "Not a LinkedIn User"
-probability = pred_prob[1] * 100
+    # Prediction results
+    predicted_class = "LinkedIn User" if pred_prob[1] > 0.5 else "Not a LinkedIn User"
+    probability = pred_prob[1] * 100
 
-# Display results
-st.subheader("Prediction Results")
-st.markdown(f"**Predicted Category:** {predicted_class}")
-st.markdown(f"**Probability of being a LinkedIn User:** {probability:.1f}%")
+    # Display results
+    st.subheader("Prediction Results")
+    st.markdown(f"**Predicted Category:** {predicted_class}")
+    st.markdown(f"**Probability of being a LinkedIn User:** {probability:.1f}%")
 
-# Display probability chart
-st.bar_chart({"Outcome": ["LinkedIn User", "Not LinkedIn User"], "Probability": pred_prob})
+    # Display probability chart
+    st.bar_chart({"Outcome": ["LinkedIn User", "Not LinkedIn User"], "Probability": pred_prob})
